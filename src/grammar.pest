@@ -1,18 +1,36 @@
-Program = _{ SOI ~ Expr ~ EOF }
+Program = { SOI ~ FuncDef+ ~ EOI }
 
-Expr = { UnaryExpr | BinaryExpr | Term }
 
-Term = _{Int | "(" ~ Expr ~ ")" }
+UnaryExpression  = { UnaryOperator ~ WS* ~ Term }
+UnaryOperator = { "!" | "-" }
 
-UnaryExpr = { Operator ~ Term }
+BinaryExpression = { Term ~ (WS* ~ BinaryOperator ~ WS* ~ Term)+}
+BinaryOperator = { "+" | "-" | "*" | "/" | "==" | "!=" | ">=" | "<=" | "<" | ">" }
 
-BinaryExpr = { Term ~ (Operator ~ Term)+ }
+Term        = { Number | String  | Boolean | FuncCall | Identifier| "(" ~ WS* ~ Expression ~ WS* ~ ")" }
+Expression = { BinaryExpression | UnaryExpression | Number | String | FuncCall | Boolean | Identifier }
 
-Operator = { "+" | "-" }
+Number = { ASCII_DIGIT+ }
+String = { "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+Identifier = { (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_")* }
+Boolean = {"True" | "False" }
 
-Int = @{ Operator? ~ ASCII_DIGIT+ }
+FuncDef = { WS* ~ "fn" ~ WS+ ~ Identifier ~ WS* ~ "(" ~ DefArgList ~ ")" ~ WS* ~ Block ~ WS* }
+Block     = { "{" ~ WS* ~ (Statement ~ WS*)+ ~ "}" }
+Statement = { WS* ~ (VarDecl | VarSet | FuncCall | FuncReturn | ForLoop | WhileLoop | IfStatement ) ~ WS* ~ ";" }
 
-WHITESPACE = _{ " " | "\t" }
+VarDecl = {"let" ~ WS+ ~ Identifier ~ (WS* ~ "=" ~ WS* ~ Expression)?}
+VarSet = { Identifier ~ WS* ~ "=" ~ WS* ~ Expression}
 
-EOF = _{ EOI | ";" }
+FuncCall = {Identifier ~ "(" ~ ArgList ~ ")"}
+FuncReturn = {"return" ~ WS+ ~ Expression}
+ArgList = { (Expression ~ ("," ~ WS* ~ Expression)*)?  }
+DefArgList = { (Identifier ~ ("," ~ WS* ~ Expression)*)? }
 
+ForLoop = {"for" ~ WS* ~ ForParams ~ WS* ~ Block }
+ForParams = { "(" ~ Statement ~ WS* ~ Expression ~ ";" ~ WS* ~ Statement ~ WS* ~ ")" }
+
+WhileLoop = {"while" ~ WS* ~ Expression ~ WS* ~ Block }
+IfStatement = {"if" ~ WS* ~ Expression ~ WS* ~ Block }
+
+WS = _{ " " | "\t" | NEWLINE }

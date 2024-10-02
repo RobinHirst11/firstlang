@@ -1,10 +1,22 @@
-use intepreter::eval;
+#![feature(unboxed_closures)]
+
+use std::collections::HashMap;
+use std::rc::Rc;
+use crate::interpreter::SymbolEntry;
 
 pub mod ast;
 pub mod parser;
-pub mod intepreter;
+mod interpreter;
 
 fn main() {
-    let ast = parser::parse("1+2+34+3-13+41").unwrap_or_else(|e| { panic!("{e}") });
-    println!("{}", eval(&ast[0]));
+    let source = "
+fn main() {
+    println(\"Hello\");
+}
+";
+    let ast = parser::parse(source).unwrap_or_else(|e| panic!("{e}"));
+
+    let mut symbol_table: HashMap<String, SymbolEntry> = HashMap::new();
+
+    println!("{}", interpreter::eval(&ast, &mut symbol_table));
 }
