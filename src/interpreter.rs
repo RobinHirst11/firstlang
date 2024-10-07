@@ -1,7 +1,3 @@
-
-// Temporary to remove all warnings
-#[allow(dead_code)]
-
 use core::panic;
 use std::collections::HashMap;
 
@@ -9,10 +5,15 @@ use crate::ast::AstNode;
 use crate::ast::BinaryOperator; 
 use crate::ast::UnaryOperator;
 
-#[derive(Debug, Clone)] pub enum Value { Integer(i32),
+use crate::builtins::Builtins;
+use crate::builtins::BuiltinFunction;
+
+#[derive(Debug, Clone)] pub enum Value {
+    Integer(i32),
     String(String),
     Boolean(bool),
     Function(String, Vec<String>, Box<AstNode>),
+    BuiltinFunction(BuiltinFunction),
 }
 
 #[derive(Clone)]
@@ -53,13 +54,21 @@ impl SymbolTable {
 
 pub struct Evaluator {
     symbol_table: SymbolTable, 
+    builtins: Builtins
 }
 
 impl Evaluator {
     pub fn new() -> Self {
-        Evaluator {
+        let mut evaluator = Evaluator {
             symbol_table: SymbolTable::new(),
+            builtins: Builtins::new()
+        };
+
+        for (name, func) in evaluator.builtins.functions.iter() {
+            evaluator.symbol_table.set(name.clone(), Value::BuiltinFunction(*func));
         }
+
+        evaluator
     }
 
     pub fn eval(&mut self, node: &AstNode) -> Result<Value, String> {
@@ -121,10 +130,11 @@ impl Evaluator {
                 let mut result = Value::Integer(0);
 
                 for stmt in statements {
-                    // TODO: Add return value value, and break out with that incase it's that
-                    // Or make result into the statement itself?
-                    // Not sure, gotta figure this stuff out
                     result = self.eval(stmt)?;
+                    match result {
+                        Value::Integer(0) => { continue }
+                        _ => { break }
+                    }
                 }
 
                 Ok(result)
@@ -145,25 +155,39 @@ impl Evaluator {
                 Ok(Value::Integer(0))
             },
             AstNode::FuncCall { name, args } => {
-                if let Some(Value::Function(_, params, body)) = self.symbol_table.get(name) {
-                    match &**args {
-                        AstNode::ArgList(arg_values) => {
-                            self.symbol_table = SymbolTable::with_parent(Box::new(self.symbol_table.clone()));
+                // Some(Value::Function(_, params, body))
+                match self.symbol_table.get(name) {
+                    Some(Value::Function(_, params, body)) => {
+                        match &**args {
+                            AstNode::ArgList(arg_values) => {
+                                self.symbol_table = SymbolTable::with_parent(Box::new(self.symbol_table.clone()));
 
-                            for (param, arg) in params.iter().zip(arg_values.iter()) {
-                                let arg_value = self.eval(arg)?;
-                                self.symbol_table.set(param.clone(), arg_value);
-                            }
+                                for (param, arg) in params.iter().zip(arg_values.iter()) {
+                                    let arg_value = self.eval(arg)?;
+                                    self.symbol_table.set(param.clone(), arg_value);
+                                }
 
-                            let result = self.eval(&body)?;
-                            self.symbol_table = *self.symbol_table.parent.as_mut().unwrap().clone();
+                                let result = self.eval(&body)?;
+                                self.symbol_table = *self.symbol_table.parent.as_mut().unwrap().clone();
 
-                            Ok(result)
-                        },
-                        unknown => panic!("Can only have ArgList as params, you had {:?}", unknown)
+                                Ok(result)
+                            },
+                            unknown => panic!("Can only have ArgList as params, you had {:?}", unknown)
+                        }
+                    },
+                    Some(Value::BuiltinFunction(func)) => {
+                        match &**args {
+                            AstNode::ArgList(arg_values) => {
+                                let evaluated_args: Result<Vec<Value>, String> = arg_values
+                                    .iter()
+                                    .map(|arg| self.eval(arg))
+                                    .collect();
+                                func(evaluated_args?)
+                            },
+                            unknown => panic!("Can only have ArgList as params, you had {:?}", unknown)
+                        }
                     }
-                } else {
-                    Err(format!("Function '{}' not found", name))
+                    _ => Err(format!("Function '{}' not found", name))
                 }
             },
             AstNode::IfStatement { condition, body } => {

@@ -7,7 +7,7 @@ UnaryOperator = { "!" | "-" }
 BinaryExpression = { Term ~ (WS* ~ BinaryOperator ~ WS* ~ Term)+}
 BinaryOperator = { "+" | "-" | "*" | "/" | "==" | "!=" | ">=" | "<=" | "<" | ">" }
 
-Term        = { Number | String  | Boolean | FuncCall | Identifier| "(" ~ WS* ~ Expression ~ WS* ~ ")" }
+Term        = { Number | String  | Boolean | FuncCall | Identifier | "(" ~ WS* ~ Expression ~ WS* ~ ")" }
 Expression = { BinaryExpression | UnaryExpression | Number | String | FuncCall | Boolean | Identifier }
 
 Number = { ASCII_DIGIT+ }

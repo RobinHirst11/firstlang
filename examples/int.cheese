@@ -1,0 +1,4 @@
+fn main() {
+    let s = input("Hello user! What would you like to double: ");
+    print(int(s) * 2);
+}

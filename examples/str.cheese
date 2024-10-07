@@ -1,0 +1,3 @@
+fn main() {
+    print(str(2 + 4, " and ", 30, " and ", True));
+}

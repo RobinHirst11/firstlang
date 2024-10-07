@@ -165,6 +165,7 @@ fn build_ast_from_term(pair: Pair<Rule>) -> AstNode {
         ))),
         Rule::Number => parse_number(pair),
         Rule::Expression => build_ast_from_expression(pair),
+	Rule::FuncCall => build_ast_from_function_call(pair),
         Rule::Identifier => AstNode::Str(pair.as_str().to_string()),
         unknown => panic!("Unknown term: {:?}", unknown),
     }

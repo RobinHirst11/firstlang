@@ -1,0 +1,11 @@
+fn main(){
+    let a = 0;
+    let b = 1;
+    let tmp;
+    while (a) < 100 {
+        tmp = b;
+        b = (a) + (b);
+        a = tmp;
+        print(a);
+    };
+}

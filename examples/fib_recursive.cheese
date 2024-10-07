@@ -1,0 +1,12 @@
+fn fib(n) {
+    if (n) >= 2 {
+        return fib((n) - 1) + fib((n) - 2);
+    };
+    if (n) < 2 {
+        return n;
+    };
+}
+fn main() {
+    let n = int(input("Which entry in the fibbonaci sequence do you want? "));
+    print(fib(n));
+}
